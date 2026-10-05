@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AK Goods — A WhatsApp front desk for Indian clinics</title>
+<meta name="description" content="AK Goods gives your clinic a WhatsApp assistant that books appointments around the clock in Hindi and English, and a dashboard that shows which patients are drifting away. For GPs, physiotherapists and dermatologists.">
+<meta property="og:title" content="AK Goods — A WhatsApp front desk for Indian clinics">
+<meta property="og:description" content="Never miss a patient message. Bookings, reminders and follow-ups on WhatsApp, in Hindi and English.">
+<meta property="og:url" content="https://akgoods.in/">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://akgoods.in/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230B6B66'/%3E%3Cpath d='M18 44 26 20h5l8 24h-5l-2-6h-8l-2 6Zm8.5-10.5h5L29 25.5Z' fill='%23fff'/%3E%3Cpath d='M41 20h4.5v10l8-10H59l-8.5 10.5L59.5 44h-5.5l-6.5-10-2 2.3V44H41Z' fill='%23F2B544'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"AK Goods","url":"https://akgoods.in/","telephone":"+91-99200-54237","founder":{"@type":"Person","name":"Jiten Makwana"}}</script>
+<!--
+  SETUP — change these in the SETTINGS block in the script near the end of this file:
+  1. WHATSAPP: the number doctors message. Use an ordinary WhatsApp or WhatsApp Business APP number,
+     NOT a number that runs a clinic bot.
+  2. FORM_ENDPOINT: the web-app URL of the Google Apps Script that saves enquiries to a Sheet.
+     Until it is set, the form opens WhatsApp with the enquiry filled in, so no lead is lost.
+  3. Fill in the [square brackets] in the footer and the policies before going live.
+-->
+<style>
+:root{--ink:#13202B;--ink2:#3C4B57;--muted:#64737F;--paper:#F7F5F0;--card:#FFFFFF;--line:#E2DED5;--teal:#0B6B66;--teal2:#0E8A83;--sun:#F2B544;--wa:#075E54;--wa2:#25D366;--bubble:#DCF8C6;
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--paper)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;line-height:1.55}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+a{color:var(--teal)}img,svg{max-width:100%}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:600;line-height:1.15;margin:0}
+h1{font-size:clamp(34px,4.6vw,56px);letter-spacing:-.01em}h2{font-size:clamp(28px,3.2vw,40px)}h3{font-size:20px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:12px}
+.lead{font-size:19px;color:var(--ink2);max-width:640px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 20px;border-radius:10px;font-weight:600;font-size:15px;text-decoration:none;border:1px solid transparent;cursor:pointer;font-family:inherit}
+.btn.primary{background:var(--teal);color:#fff}.btn.primary:hover{background:var(--teal2)}
+.btn.ghost{border-color:var(--ink);color:var(--ink);background:transparent}.btn.ghost:hover{background:var(--ink);color:#fff}
+.btn.wa{background:var(--wa2);color:#073B33}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+section{padding:84px 0}
+header.top{position:sticky;top:0;z-index:20;background:rgba(247,245,240,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:24px;height:66px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-family:Fraunces,serif;font-weight:600;font-size:21px}
+nav.main{display:flex;gap:22px;margin-left:auto}nav.main a{color:var(--ink2);text-decoration:none;font-size:15px}nav.main a:hover{color:var(--teal)}
+@media (max-width:860px){nav.main{display:none}}
+/* hero */
+.hero{padding:64px 0 72px}.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+@media (max-width:900px){.hero .wrap{grid-template-columns:1fr}}
+.hero .ctas{display:flex;gap:12px;flex-wrap:wrap;margin:28px 0 18px}
+.trust{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted)}.trust span::before{content:"✓ ";color:var(--teal);font-weight:700}
+.spec{display:inline-flex;background:#ECE8DF;border-radius:10px;padding:4px;margin-bottom:22px}
+.spec button{border:0;background:none;padding:8px 14px;border-radius:7px;font:inherit;font-size:14px;color:var(--ink2);cursor:pointer}
+.spec button[aria-pressed=true]{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+/* phone */
+.phone{width:min(340px,100%);margin:0 auto;border-radius:38px;background:#111;padding:11px;box-shadow:0 30px 60px -20px rgba(19,32,43,.45)}
+.screen{border-radius:28px;overflow:hidden;background:#ECE5DD;height:600px;display:flex;flex-direction:column}
+.wa-head{background:var(--wa);color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.wa-head .av{width:36px;height:36px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--wa);font-weight:700;font-size:14px}
+.wa-head b{display:block;font-size:15px}.wa-head small{opacity:.8;font-size:12px}
+.chat{flex:1;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.msg{max-width:82%;padding:7px 10px 6px;border-radius:9px;box-shadow:0 1px .5px rgba(0,0,0,.13);white-space:pre-line;line-height:1.4}
+.msg.bot{background:#fff;align-self:flex-start;border-top-left-radius:2px}.msg.me{background:var(--bubble);align-self:flex-end;border-top-right-radius:2px}
+.msg.alert{background:#FFE9E7;border:1px solid #F1B5AE}
+.msg .t{display:block;text-align:right;font-size:10.5px;color:#7A8A85;margin-top:2px}
+.qr{align-self:flex-start;display:flex;flex-direction:column;gap:5px;width:82%}
+.qr button{background:#fff;border:0;border-radius:9px;padding:9px;color:#0B7DBA;font:inherit;font-size:14px;cursor:pointer;box-shadow:0 1px .5px rgba(0,0,0,.13)}
+.qr button:hover{background:#F4FAFD}
+.typing{align-self:flex-start;background:#fff;border-radius:9px;padding:8px 12px;color:#7A8A85;font-size:13px}
+.compose{display:flex;gap:6px;padding:8px;background:#F0F0F0}
+.compose input{flex:1;border:0;border-radius:20px;padding:10px 14px;font:inherit;font-size:14px}
+.compose button{width:42px;height:42px;border-radius:50%;border:0;background:var(--wa);color:#fff;font-size:17px;cursor:pointer}
+.demo-note{text-align:center;font-size:12.5px;color:var(--muted);margin-top:12px}
+.demo-note button{background:none;border:0;color:var(--teal);text-decoration:underline;cursor:pointer;font:inherit}
+/* generic */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:860px){.grid3,.grid2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px}
+.card p{color:var(--ink2);margin:10px 0 0}
+.num{font-family:Fraunces,serif;font-size:15px;color:var(--teal);font-weight:600}
+.problem{background:var(--ink);color:#EDEFF1}.problem h2{color:#fff}.problem .card{background:#1C2C38;border-color:#2B3D4A}.problem .card p{color:#B9C4CC}.problem .card h3{color:#fff}
+/* dashboard demo */
+.dash{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 20px 50px -25px rgba(19,32,43,.35)}
+.dash-top{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:#FBFAF7}
+.dots i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#E3DED3;margin-right:5px}
+.dash-tabs{display:flex;gap:4px;margin-left:12px;flex-wrap:wrap}.dash-tabs button{border:0;background:none;padding:6px 11px;border-radius:7px;font:inherit;font-size:13.5px;color:var(--muted);cursor:pointer}
+.dash-tabs button[aria-selected=true]{background:#EAF4F3;color:var(--teal);font-weight:600}
+.sample{margin-left:auto;font-size:11.5px;background:#FFF4DA;color:#7A5300;padding:3px 8px;border-radius:6px}
+.dash-body{padding:18px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}@media (max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{border:1px solid var(--line);border-radius:12px;padding:12px}.stat b{font-family:Fraunces,serif;font-size:26px;display:block}.stat span{font-size:12.5px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:14px}th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line)}
+td{padding:10px 8px;border-bottom:1px solid #F0EDE6}tr.new td{background:#EAF7EF;transition:background 2s}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:10px;background:#EEF0F2;color:var(--ink2)}.pill.ok{background:#E3F4E8;color:#1E6B37}.pill.in{background:#E7EEFD;color:#1A4FB0}.pill.risk{background:#FDECEA;color:#A2271B}
+.conv{display:grid;gap:8px;font-size:14px}.conv div{border:1px solid var(--line);border-radius:10px;padding:9px 12px}.conv small{color:var(--muted)}
+/* specialties */
+.spec-panel{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}@media (max-width:860px){.spec-panel{grid-template-columns:1fr}}
+ul.ticks{list-style:none;padding:0;margin:16px 0 0}ul.ticks li{padding:8px 0 8px 28px;position:relative;border-bottom:1px solid var(--line);color:var(--ink2)}
+ul.ticks li::before{content:"";position:absolute;left:4px;top:15px;width:10px;height:6px;border-left:2px solid var(--teal);border-bottom:2px solid var(--teal);transform:rotate(-45deg)}
+.body3d{background:linear-gradient(180deg,#26313C,#10161D);border-radius:16px;padding:22px;color:#C9D4DE;text-align:center}
+/* pricing */
+.price{max-width:560px;margin:0 auto;text-align:center}.price .amt{font-family:Fraunces,serif;font-size:58px;font-weight:600;margin:6px 0}.price .amt small{font-size:18px;color:var(--muted);font-family:"IBM Plex Sans"}
+.price ul{text-align:left}
+/* faq */
+details.q{border-bottom:1px solid var(--line);padding:16px 0}details.q summary{cursor:pointer;font-weight:600;font-size:17px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+details.q summary::after{content:"+";color:var(--teal);font-size:22px;line-height:1}details.q[open] summary::after{content:"–"}details.q p{color:var(--ink2);margin:10px 0 0}
+/* contact */
+form.enq{display:grid;gap:12px}form.enq .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:600px){form.enq .two{grid-template-columns:1fr}}
+label.f{display:grid;gap:5px;font-size:14px;font-weight:500}label.f input,label.f select,label.f textarea{border:1px solid var(--line);border-radius:9px;padding:11px 12px;font:inherit;background:#fff}
+.ok-msg{background:#E3F4E8;color:#1E6B37;border-radius:10px;padding:12px 14px;display:none}
+.founder{display:flex;gap:18px;align-items:flex-start}.avatar{flex:none;width:72px;height:72px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Fraunces,serif;font-size:26px}
+footer{background:var(--ink);color:#B9C4CC;padding:48px 0 32px;font-size:14px}footer a{color:#DCE4EA}footer .cols{display:grid;grid-template-columns:2fr 1fr 1fr;gap:24px}@media (max-width:760px){footer .cols{grid-template-columns:1fr}}
+.policy{display:none;background:var(--card);border-top:1px solid var(--line)}.policy:target{display:block}.policy .wrap{max-width:780px;padding:56px 22px}.policy h2{margin-bottom:8px}.policy h3{margin:24px 0 6px;font-size:18px}.policy p,.policy li{color:var(--ink2)}
+.draftnote{background:#FFF4DA;color:#7A5300;border-radius:8px;padding:8px 12px;font-size:13px;margin:12px 0}
+.hi{font-family:"Noto Sans Devanagari",sans-serif}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="logo" href="#top" aria-label="AK Goods home">
+    <svg width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#0B6B66"/><path d="M18 44 26 20h5l8 24h-5l-2-6h-8l-2 6Zm8.5-10.5h5L29 25.5Z" fill="#fff"/><path d="M41 20h4.5v10l8-10H59l-8.5 10.5L59.5 44h-5.5l-6.5-10-2 2.3V44H41Z" fill="#F2B544"/></svg>
+    AK Goods</a>
+  <nav class="main" aria-label="Main"><a href="#how">How it works</a><a href="#demo">Live demo</a><a href="#specialties">Specialties</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></nav>
+  <a class="btn primary" href="#contact" style="padding:10px 16px">Book a demo</a>
+</div></header>
+
+<main id="top">
+<section class="hero"><div class="wrap">
+  <div>
+    <div class="spec" role="group" aria-label="Your specialty">
+      <button data-for="gp" aria-pressed="true">General practice</button><button data-for="physio" aria-pressed="false">Physiotherapy</button><button data-for="derm" aria-pressed="false">Dermatology</button>
+    </div>
+    <h1 id="heroTitle">A WhatsApp front desk for your clinic.</h1>
+    <p class="lead" id="heroLead">Patients message your clinic number at any hour. The assistant answers in Hindi or English, books them into your real slots, and your dashboard shows who is due back — and who is quietly drifting away.</p>
+    <div class="ctas"><a class="btn primary" href="#contact">Book a 15-minute demo</a><a class="btn ghost" href="#demo">Try it yourself</a></div>
+    <div class="trust"><span>No app for patients</span><span>Hindi and English</span><span>Set up in a day</span><span>Free pilot</span></div>
+  </div>
+  <div aria-label="Interactive demo: chat as a patient">
+    <div class="phone"><div class="screen">
+      <div class="wa-head"><div class="av" id="waAv">DF</div><div><b id="waName">Demo Family Clinic</b><small>online</small></div></div>
+      <div class="chat" id="chat" aria-live="polite"></div>
+      <form class="compose" id="compose"><input id="say" placeholder="Type as a patient… try 'fever' or 'बुखार'" aria-label="Type a message as a patient" autocomplete="off"><button aria-label="Send">➤</button></form>
+    </div></div>
+    <p class="demo-note">Simulated demo — no real messages are sent. <button id="restart">Start again</button></p>
+  </div>
+</div></section>
+
+<section class="problem" id="problem"><div class="wrap">
+  <div class="eyebrow" style="color:var(--sun)">The problem</div>
+  <h2 style="max-width:720px">Every clinic loses patients it never hears about.</h2>
+  <div class="grid3" style="margin-top:36px">
+    <div class="card"><h3>Messages at 10 pm</h3><p>Patients message when they feel unwell — evenings, Sundays, during a busy OPD. A late reply often means they have booked elsewhere.</p></div>
+    <div class="card"><h3>The phone never stops</h3><p>Your receptionist spends the morning answering the same questions: timings, fees, location, "is the doctor in today?"</p></div>
+    <div class="card"><h3>Patients quietly drift</h3><p>The BP patient who skips a review. The physio patient who stops after session four. Nobody notices until they are gone.</p></div>
+  </div>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <div class="eyebrow">How it works</div><h2>Three steps. Nothing for patients to install.</h2>
+  <div class="grid3" style="margin-top:36px">
+    <div class="card"><div class="num">01</div><h3 style="margin-top:6px">The patient messages</h3><p>On your clinic's own WhatsApp number — the app they already use every day.</p></div>
+    <div class="card"><div class="num">02</div><h3 style="margin-top:6px">The assistant books them</h3><p>It understands everyday Hindi and English, checks your real availability, and confirms the slot.</p></div>
+    <div class="card"><div class="num">03</div><h3 style="margin-top:6px">You see everything</h3><p>Appointments, conversations, prescriptions and patients due for follow-up, in one dashboard.</p></div>
+  </div>
+</div></section>
+
+<section id="demo" style="background:#EFECE5"><div class="wrap">
+  <div class="eyebrow">Live demo</div><h2>Book on the phone above. Watch it arrive here.</h2>
+  <p class="lead" style="margin:12px 0 28px">This is the clinic's view. Make a booking in the chat at the top of the page and it appears in today's list.</p>
+  <div class="dash">
+    <div class="dash-top"><span class="dots"><i></i><i></i><i></i></span><b id="dashClinic" style="font-size:14px">Demo Family Clinic</b>
+      <div class="dash-tabs" role="tablist"><button role="tab" data-t="today" aria-selected="true">Today</button><button role="tab" data-t="conv" aria-selected="false">Conversations</button><button role="tab" data-t="risk" aria-selected="false">Patients at risk</button></div>
+      <span class="sample">Sample data</span></div>
+    <div class="dash-body">
+      <div class="stats"><div class="stat"><b id="sBook">38</b><span>Bookings this week</span></div><div class="stat"><b>11</b><span>Booked after clinic hours</span></div><div class="stat"><b>2</b><span>No-shows this week</span></div><div class="stat"><b>6</b><span>Due for follow-up</span></div></div>
+      <div id="dT"><table><thead><tr><th>Time</th><th>Patient</th><th>Concern</th><th>Status</th></tr></thead><tbody id="today"></tbody></table></div>
+      <div id="dC" hidden><div class="conv" id="convList"></div></div>
+      <div id="dR" hidden><table><thead><tr><th>Patient</th><th>Why flagged</th><th></th></tr></thead><tbody id="risk"></tbody></table></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="specialties"><div class="wrap">
+  <div class="eyebrow">Built for your specialty</div><h2>One system, shaped to how you practise.</h2>
+  <div class="spec" role="group" aria-label="Specialty" style="margin-top:26px"><button data-for="gp" aria-pressed="true">General practice</button><button data-for="physio" aria-pressed="false">Physiotherapy</button><button data-for="derm" aria-pressed="false">Dermatology</button></div>
+  <div class="spec-panel" id="specPanel"></div>
+</div></section>
+
+<section style="background:#EFECE5"><div class="wrap">
+  <div class="eyebrow">Why AK Goods</div><h2>Different from clinic software you have seen.</h2>
+  <div class="grid2" style="margin-top:32px">
+    <div class="card"><h3>It works where patients already are</h3><p>Most clinic software is built for the doctor's desk. This is built for the patient's phone — no app, no portal, no password.</p></div>
+    <div class="card"><h3>It keeps your current system</h3><p>Already use practice software? Keep it. AK Goods sits in front of it, on WhatsApp, and handles the conversations your software never sees.</p></div>
+    <div class="card"><h3>Your own clinic number</h3><p>Patients see your clinic's name. Your personal number stays personal, and stops being flooded.</p></div>
+    <div class="card"><h3>Set up with you, in person</h3><p>We configure the assistant around your timings, services and fees, test it with you, and stay on call through the pilot.</p></div>
+  </div>
+</div></section>
+
+<section id="safety"><div class="wrap grid2" style="align-items:start">
+  <div><div class="eyebrow">Safety and data</div><h2>The doctor stays in charge.</h2>
+    <p class="lead" style="margin-top:14px">The assistant books, informs and follows up. It never diagnoses or prescribes.</p></div>
+  <ul class="ticks">
+    <li><b>Emergencies come first.</b> Messages describing chest pain, breathlessness, stroke signs or self-harm are directed to call 112 straight away, in Hindi and English, and flagged for the doctor.</li>
+    <li><b>Every clinic's data is kept separately,</b> in its own sheet, shared only with that clinic.</li>
+    <li><b>Clinical decisions remain yours.</b> Treatment suggestions in the dashboard are prompts for the doctor, never instructions to patients.</li>
+    <li><b>We are open about who processes messages:</b> WhatsApp (Meta) delivers them, an AI service drafts replies, and Google stores the clinic's records. <a href="#privacy">Read our privacy policy.</a></li>
+  </ul>
+</div></section>
+
+<section id="pricing" style="background:#EFECE5"><div class="wrap"><div class="price card">
+  <div class="eyebrow">Founding-clinic price</div><h2>Start with a free pilot.</h2>
+  <div class="amt">₹2,999<small> / month after the pilot</small></div>
+  <p style="color:var(--ink2);margin:0">We measure the pilot with you: bookings made on WhatsApp, bookings made after hours, and patients brought back. You decide with real numbers.</p>
+  <ul class="ticks"><li>WhatsApp assistant on your clinic number, in Hindi and English</li><li>Clinic dashboard: appointments, conversations, prescriptions, follow-ups</li><li>Set-up, configuration and training, done with you</li><li>Support by WhatsApp and phone</li><li>Cancel any time after the pilot</li></ul>
+  <p style="font-size:13px;color:var(--muted);margin-top:14px">WhatsApp's own message charges, where they apply, are billed by Meta at cost. Prices exclude GST.</p>
+  <a class="btn primary" href="#contact" style="margin-top:14px">Apply for the pilot</a>
+</div></div></section>
+
+<section id="pilot"><div class="wrap grid2" style="align-items:center">
+  <div><div class="eyebrow">Our first clinics</div><h2>Testimonials will come from real pilots.</h2>
+    <p class="lead" style="margin-top:14px">We are onboarding our founding clinics now. Their results — and their own words, with their permission — will appear here. We won't publish claims we can't show you.</p></div>
+  <div class="card"><h3>What every pilot measures</h3><ul class="ticks"><li>Appointments booked through WhatsApp</li><li>Bookings made outside clinic hours</li><li>No-shows before and during the pilot</li><li>Lapsed patients brought back</li></ul></div>
+</div></section>
+
+<section id="faq" style="background:#EFECE5"><div class="wrap" style="max-width:820px">
+  <div class="eyebrow">Questions doctors ask</div><h2 style="margin-bottom:18px">Frequently asked questions</h2>
+  <details class="q"><summary>Do I need a new phone number?</summary><p>Yes — a new SIM for the clinic's WhatsApp line. Your current number stays exactly as it is. The new number becomes your booking line, and we do the set-up; you only need the SIM for a one-time verification code.</p></details>
+  <details class="q"><summary>Does it replace my current software?</summary><p>No. It works alongside whatever you use today. Many clinics keep their records system and use AK Goods for everything that happens on WhatsApp.</p></details>
+  <details class="q"><summary>What if a patient describes an emergency?</summary><p>The assistant recognises emergency descriptions — such as chest pain, difficulty breathing or stroke signs — and tells the patient to call 112 immediately, before anything else. The conversation is flagged for the doctor.</p></details>
+  <details class="q"><summary>Will it give medical advice?</summary><p>No. It answers practical questions — timings, fees, location, preparation — and books appointments. Medical questions are directed to the doctor.</p></details>
+  <details class="q"><summary>Can patients write in Hindi?</summary><p>Yes. Patients can write in Hindi, in English, or a mix of both, the way people actually message.</p></details>
+  <details class="q"><summary>Where is my patients' data kept?</summary><p>Each clinic's records are kept separately and shared only with that clinic. See our <a href="#privacy">privacy policy</a> for exactly which services are involved.</p></details>
+  <details class="q"><summary>What happens after the pilot?</summary><p>If it works for you, it continues at ₹2,999 a month. If not, we switch it off — no contract to break.</p></details>
+</div></section>
+
+<section id="contact"><div class="wrap grid2" style="align-items:start">
+  <div><div class="eyebrow">Book a demo</div><h2>Fifteen minutes, at your clinic or on a call.</h2>
+    <p class="lead" style="margin-top:14px">Tell us a little about your clinic and we will reply within one working day.</p>
+    <p style="margin-top:22px"><a class="btn wa" id="waBtn" href="#">Message us on WhatsApp</a></p>
+    <p style="color:var(--ink2)">Or call <a id="telLink" href="#"></a></p>
+    <div class="card" style="margin-top:26px"><div class="founder"><div class="avatar" aria-hidden="true">JM</div><div><b>Jiten Makwana</b><div style="color:var(--muted);font-size:14px">Founder, AK Goods</div>
+      <p style="margin-top:8px">I work directly with every clinic we take on: setting up the WhatsApp line, shaping the assistant around how you run your practice, and staying reachable throughout the pilot.</p></div></div></div>
+  </div>
+  <form class="card enq" id="enq">
+    <div class="two"><label class="f">Your name<input name="name" required autocomplete="name"></label><label class="f">Mobile number<input name="phone" required inputmode="tel" autocomplete="tel"></label></div>
+    <div class="two"><label class="f">Clinic name<input name="clinic" required></label><label class="f">City<input name="city" required autocomplete="address-level2"></label></div>
+    <label class="f">Specialty<select name="specialty" id="fSpec"><option>General practice</option><option>Physiotherapy</option><option>Dermatology</option><option>Other</option></select></label>
+    <label class="f">Anything we should know? <span style="color:var(--muted);font-weight:400">(optional)</span><textarea name="message" rows="3"></textarea></label>
+    <label style="font-size:13px;color:var(--ink2);display:flex;gap:8px;align-items:flex-start"><input type="checkbox" required style="margin-top:3px"> I agree that AK Goods may contact me about this enquiry, as described in the <a href="#privacy">privacy policy</a>.</label>
+    <button class="btn primary" type="submit">Send enquiry</button>
+    <div class="ok-msg" id="okMsg" role="status">Thank you — we will be in touch within one working day.</div>
+  </form>
+</div></section>
+</main>
+
+<div class="policy" id="privacy"><div class="wrap">
+  <h2>Privacy policy</h2><div class="draftnote">Draft — to be reviewed by a lawyer before the site goes live.</div>
+  <p>This policy explains how AK Goods ("we") handles personal data, in line with India's Digital Personal Data Protection Act, 2023.</p>
+  <h3>Enquiries on this website</h3><p>When you send an enquiry we collect your name, mobile number, clinic name, city, specialty, your message, and which campaign link brought you here. We use it only to reply to you and arrange a demo. We do not sell it or share it for marketing. It is stored in Google Sheets and deleted within 24 months if you do not become a customer.</p>
+  <h3>The clinic service</h3><p>For clinics using AK Goods, patient messages are delivered by WhatsApp (Meta Platforms); replies are drafted by an AI service; the clinic's records are stored in Google Sheets; and the service runs on cloud hosting. Each clinic's data is kept separately and is available only to that clinic. The clinic decides what patient data is collected and remains responsible for it; we process it on the clinic's behalf.</p>
+  <h3>Your rights</h3><p>You can ask us to show, correct or delete your data, or withdraw consent, by writing to [privacy email] or calling +91 99200 54237.</p>
+  <h3>Contact</h3><p>AK Goods, [registered address]. Grievance officer: [name], [email].</p>
+  <p><a href="#top">Back to the site</a></p>
+</div></div>
+<div class="policy" id="terms"><div class="wrap">
+  <h2>Terms of service</h2><div class="draftnote">Draft — to be reviewed by a lawyer before the site goes live.</div>
+  <h3>Pilot and pricing</h3><p>The pilot is free. If you continue, the service costs ₹2,999 a month plus GST, billed monthly in advance. You can cancel at any time with [notice period] notice. WhatsApp message charges, where they apply, are billed at cost.</p>
+  <h3>Clinical responsibility</h3><p>AK Goods is administrative and communication software. It does not diagnose, prescribe or give medical advice. All clinical decisions remain the responsibility of the treating doctor or physiotherapist.</p>
+  <h3>Availability</h3><p>We aim for the service to be available at all times but cannot guarantee uninterrupted operation, including where it depends on WhatsApp, Google or hosting providers.</p>
+  <h3>Governing law</h3><p>These terms are governed by the laws of India, with courts at [city] having jurisdiction.</p>
+  <p><a href="#top">Back to the site</a></p>
+</div></div>
+
+<footer><div class="wrap">
+  <div class="cols">
+    <div><div class="logo" style="color:#fff"><svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#0E8A83"/><path d="M18 44 26 20h5l8 24h-5l-2-6h-8l-2 6Zm8.5-10.5h5L29 25.5Z" fill="#fff"/><path d="M41 20h4.5v10l8-10H59l-8.5 10.5L59.5 44h-5.5l-6.5-10-2 2.3V44H41Z" fill="#F2B544"/></svg>AK Goods</div>
+      <p style="margin-top:12px;max-width:380px">WhatsApp assistants and clinic dashboards for general practitioners, physiotherapists and dermatologists in India.</p></div>
+    <div><b style="color:#fff">Company</b><p>AK Goods<br>[Registered address]<br>[GSTIN]</p></div>
+    <div><b style="color:#fff">Contact</b><p><a id="footTel" href="#"></a><br><a href="#contact">Book a demo</a><br><a href="#privacy">Privacy policy</a> · <a href="#terms">Terms</a></p></div>
+  </div>
+  <p style="margin-top:28px;font-size:12.5px;color:#7F8E99">© <span id="yr"></span> AK Goods. WhatsApp is a trademark of Meta Platforms, Inc. AK Goods is not affiliated with Meta.</p>
+</div></footer>
+
+<script>
+/* ---------- SETTINGS ---------- */
+const WHATSAPP = '919920054237';    // number doctors message: must be an ordinary WhatsApp or WhatsApp Business APP number
+const FORM_ENDPOINT = '';           // Google Apps Script web-app URL; until set, enquiries open WhatsApp instead
+
+/* ---------- specialties ---------- */
+const SPEC = {
+  gp: { clinic:'Demo Family Clinic', av:'DF', title:'A WhatsApp front desk for your clinic.',
+    lead:'Patients message your clinic number at any hour. The assistant answers in Hindi or English, books them into your real slots, and your dashboard shows who is due back — and who is quietly drifting away.',
+    concerns:['Fever or infection', 'Cough or cold', 'Stomach problem', 'BP, sugar or thyroid', 'Something else'],
+    panel:['General practice', 'Keep chronic patients coming back.', ['Books fever, cough and routine visits around the clock', 'Recognises chest pain and other emergencies and directs them to 112', 'Flags BP, diabetes and thyroid patients who miss their reviews', 'Sends prescriptions to the patient on WhatsApp', 'A GP medicine library for faster prescriptions'],
+      'For a family practice, the steady patients are the backbone. AK Goods notices when they drift — before they are lost.'] },
+  physio: { clinic:'Demo Physio & DNS Clinic', av:'DP', title:'Keep every rehab patient on track.',
+    lead:'Patients book sessions on WhatsApp in Hindi or English. Your dashboard tracks each course — session four of ten — and flags anyone who stops coming, before they drop out.',
+    concerns:['Back or neck pain', 'Sports injury', 'Rehab after surgery', 'Stroke or neuro rehab', 'Something else'],
+    panel:['Physiotherapy and DNS', 'Assessment, plans and adherence in one place.', ['Session packages tracked: who is due, who has stopped', 'A 3D body to record findings on individual muscles, ligaments and discs', 'The eleven DNS functional tests, recorded and reported', 'Exercise programmes as a printable handout in English and Hindi', 'Assessment reports as a PDF, with pictures of the findings'],
+      'Rehab works when patients finish the course. AK Goods shows who is slipping between sessions.'] },
+  derm: { clinic:'Demo Skin Clinic', av:'DS', title:'Fill your calendar, not your phone.',
+    lead:'Patients ask about acne, hair fall and treatments on WhatsApp at any hour. The assistant answers in Hindi or English, books consultations, and brings treatment-course patients back on time.',
+    concerns:['Acne', 'Hair fall', 'Pigmentation', 'Skin allergy or rash', 'Something else'],
+    panel:['Dermatology', 'Treatment courses that patients complete.', ['Books consultations and procedure sessions around the clock', 'Answers common questions about timings, fees and preparation', 'Tracks multi-session courses and reminds patients when they are due', 'Patients share photos of skin concerns before the visit', 'Win-back messages for lapsed patients'],
+      'Most treatments need several visits. AK Goods keeps patients coming back until the course is done.'] },
+};
+let spec = new URLSearchParams(location.search).get('for');
+if (!SPEC[spec]) spec = 'gp';
+
+/* ---------- dashboard demo ---------- */
+const TODAY = [['10:30 AM', 'R. Mehta', 0, 'in'], ['11:00 AM', 'S. Iyer', 1, 'ok'], ['12:20 PM', 'A. Khan', 3, 'ok'], ['5:30 PM', 'P. Nair', 0, 'ok'], ['6:10 PM', 'V. Rao', 2, 'ok']];
+const RISK = { gp:[['M. Desai', 'BP review overdue by 3 weeks'], ['K. Shah', 'Missed diabetes follow-up'], ['T. Joshi', 'No reply to reminder']],
+  physio:[['N. Kapoor', 'Stopped after session 4 of 10'], ['D. Pillai', 'Reported side effects after exercises'], ['L. Bose', 'Course overdue by 9 days']],
+  derm:[['F. Ali', 'Acne course: session 3 overdue'], ['G. Menon', 'Missed follow-up after peel'], ['H. Verma', 'No visit in 90 days']] };
+let bookings = 38;
+const $ = s => document.querySelector(s);
+function drawToday() {
+  $('#today').innerHTML = TODAY.map(([t, n, c, st]) => `<tr><td>${t}</td><td>${n}</td><td>${SPEC[spec].concerns[c]}</td><td><span class="pill ${st}">${st === 'in' ? 'Checked in' : 'Confirmed'}</span></td></tr>`).join('');
+  $('#risk').innerHTML = RISK[spec].map(([n, w]) => `<tr><td>${n}</td><td><span class="pill risk">${w}</span></td><td><button class="btn ghost" style="padding:5px 10px;font-size:13px" onclick="this.textContent='Message sent'">Message</button></td></tr>`).join('');
+}
+const conv = [];
+function logConv(who, text) {
+  conv.push({ who, text, at:new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) });
+  $('#convList').innerHTML = conv.slice(-8).map(c => `<div><small>${c.at} · ${c.who === 'me' ? 'Patient' : 'Assistant'}</small><br>${c.text.replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>`).join('') || '<p>No messages yet. Chat on the phone above.</p>';
+}
+document.querySelectorAll('.dash-tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.dash-tabs button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  $('#dT').hidden = b.dataset.t !== 'today'; $('#dC').hidden = b.dataset.t !== 'conv'; $('#dR').hidden = b.dataset.t !== 'risk';
+}));
+
+/* ---------- phone demo: a scripted conversation ---------- */
+const chat = $('#chat');
+let flow = {}, busy = false;
+const now = () => new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+function bubble(text, who, extra = '') {
+  const d = document.createElement('div'); d.className = `msg ${who} ${extra}`;
+  d.textContent = text; const t = document.createElement('span'); t.className = 't'; t.textContent = now() + (who === 'me' ? ' ✓✓' : ''); d.append(t);
+  chat.append(d); chat.scrollTop = chat.scrollHeight; logConv(who, text);
+}
+function buttons(list) {
+  const q = document.createElement('div'); q.className = 'qr';
+  for (const [label, fn] of list) { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = () => { q.remove(); bubble(label, 'me'); fn(); }; q.append(b); }
+  chat.append(q); chat.scrollTop = chat.scrollHeight;
+}
+function bot(text, btns, extra) {
+  busy = true; const ty = document.createElement('div'); ty.className = 'typing'; ty.textContent = 'typing…'; chat.append(ty); chat.scrollTop = chat.scrollHeight;
+  setTimeout(() => { ty.remove(); bubble(text, 'bot', extra); if (btns) buttons(btns); busy = false; }, 650);
+}
+const dayName = k => { const d = new Date(); d.setDate(d.getDate() + k); return k === 0 ? 'Today' : k === 1 ? 'Tomorrow' : d.toLocaleDateString('en-IN', { weekday:'long' }); };
+function menu() { flow = {}; bot(`Hello! 👋 Welcome to ${SPEC[spec].clinic}. How can I help you today?`, [['Book an appointment', book], ['Timings and fees', info], ['My records', records]]); }
+function book() { flow = { step:'concern' }; bot('What is this related to?', SPEC[spec].concerns.map((c, i) => [c, () => { flow.concern = i; pickDay(); }])); }
+function pickDay() { flow.step = 'day'; bot('When would you like to come in?', [0, 1, 2].map(k => [dayName(k), () => { flow.day = dayName(k); pickTime(); }])); }
+function pickTime() { flow.step = 'time'; bot(`Available on ${flow.day}:`, ['10:40 AM', '11:20 AM', '5:00 PM', '6:40 PM'].map(t => [t, () => { flow.time = t; askName(); }])); }
+function askName() { flow.step = 'name'; bot("What is the patient's name?\n(Type any name — this is a demo.)"); }
+function confirmBooking() {
+  flow.step = 'confirm';
+  bot(`Ready to confirm:\n\n${flow.name}\n${SPEC[spec].concerns[flow.concern]}\n${flow.day}, ${flow.time}`, [['Confirm', done], ['Change something', book]]);
+}
+function done() {
+  bot(`✅ Booked! See you ${flow.day.toLowerCase() === 'today' ? 'today' : flow.day} at ${flow.time}.\n\nYou'll get a reminder before your visit. Reply anytime to reschedule.`, [['Back to menu', menu]]);
+  if (flow.day === 'Today') TODAY.push([flow.time, flow.name, flow.concern, 'ok']);
+  else TODAY.unshift([`${flow.day}, ${flow.time}`, flow.name, flow.concern, 'ok']);
+  drawToday(); $('#sBook').textContent = ++bookings;
+  const row = [...$('#today').rows].find(r => r.cells[1].textContent === flow.name); if (row) { row.classList.add('new'); setTimeout(() => row.classList.remove('new'), 4000); }
+  flow = {};
+}
+function info() { bot(`${SPEC[spec].clinic}\n\n🕘 Mon–Sat, 10 AM–1 PM and 5–8 PM\n💳 Consultation ₹500\n📍 Near the main market, with parking`, [['Book an appointment', book], ['Back to menu', menu]]); }
+function records() { bot('Your last visit: 12 September.\nPrescription and receipts are available — this demo shows sample records only.', [['Book a follow-up', book], ['Back to menu', menu]]); }
+// Free text: emergencies first, then everyday intents, in English or Hindi.
+const EMERG = /chest pain|can'?t breathe|breathless|unconscious|fainted|stroke|suicid|kill myself|सीने में दर्द|साँस|सांस|बेहोश|आत्महत्या/i;
+function heard(text) {
+  if (EMERG.test(text)) { bot('⚠️ This could be an emergency.\n\nPlease call 112 now or go to the nearest emergency department. Do not wait for an appointment.\n\nThe clinic team has been alerted to your message.', [['Back to menu', menu]], 'alert'); flow = {}; return; }
+  if (flow.step === 'name') { flow.name = text.slice(0, 40); confirmBooking(); return; }
+  const t = text.toLowerCase();
+  if (/^(hi|hello|hey|namaste)\b|नमस्ते|नमस्कार/.test(t)) { /[\u0900-\u097F]/.test(text) ? bot('नमस्ते! 🙏 मैं आपकी कैसे मदद कर सकता हूँ?', [['अपॉइंटमेंट बुक करें', book], ['समय और फ़ीस', info]]) : menu(); return; }
+  if (/बुखार|दर्द|खांसी|पेट/.test(text)) { bot('आपकी तबीयत के बारे में सुनकर दुख हुआ। क्या आप डॉक्टर से मिलने का समय बुक करना चाहेंगे?', [['हाँ, बुक करें', book], ['समय और फ़ीस', info]]); return; }
+  if (/time|timing|open|when.*(open|close)|fee|cost|charge|price|address|where|location/.test(t)) { info(); return; }
+  if (/book|appointment|slot|visit|come in|fever|pain|cough|cold|acne|hair|rash|injury|back|neck/.test(t)) { bot("I can book that for you.", [['Book an appointment', book]]); return; }
+  if (/record|prescription|report|receipt/.test(t)) { records(); return; }
+  bot('I can help you book an appointment, share timings and fees, or show your records.', [['Book an appointment', book], ['Timings and fees', info], ['My records', records]]);
+}
+$('#compose').addEventListener('submit', e => { e.preventDefault(); const v = $('#say').value.trim(); if (!v || busy) return; $('#say').value = ''; chat.querySelectorAll('.qr').forEach(q => q.remove()); bubble(v, 'me'); heard(v); });
+function restart() { chat.innerHTML = ''; conv.length = 0; $('#convList').innerHTML = '<p>No messages yet. Chat on the phone above.</p>'; menu(); }
+$('#restart').addEventListener('click', restart);
+
+/* ---------- specialty switch (also from campaign links: ?for=gp, physio or derm) ---------- */
+function setSpec(s) {
+  spec = s; const S = SPEC[s];
+  document.querySelectorAll('.spec button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.for === s)));
+  $('#heroTitle').textContent = S.title; $('#heroLead').textContent = S.lead;
+  $('#waName').textContent = S.clinic; $('#waAv').textContent = S.av; $('#dashClinic').textContent = S.clinic;
+  const [name, head, list, note] = S.panel;
+  $('#specPanel').innerHTML = `<div><h3 style="font-size:26px">${head}</h3><ul class="ticks">${list.map(x => `<li>${x}</li>`).join('')}</ul></div>` +
+    (s === 'physio' ? `<div class="body3d"><svg viewBox="0 0 120 220" width="150" aria-label="Illustration of the 3D body assessment"><g fill="#A3443C" opacity=".9"><circle cx="60" cy="22" r="14"/><path d="M38 44h44l6 64-10 4-4-44-4 52H50l-4-52-4 44-10-4z"/><path d="M48 116h11l1 92H49zM61 116h11l-1 92H61z"/></g><path d="M44 74h32l-2 26H46z" fill="#1F6FEB" opacity=".9"/><circle cx="66" cy="170" r="5" fill="#F2B544"/></svg><p style="margin:10px 0 0">Findings recorded on individual muscles, ligaments and discs — with a DNS stabilising-system view.</p></div>`
+    : `<div class="card"><p class="eyebrow" style="margin:0 0 8px">${name}</p><p style="margin:0;font-size:17px">${note}</p></div>`);
+  $('#fSpec').value = { gp:'General practice', physio:'Physiotherapy', derm:'Dermatology' }[s];
+  drawToday(); restart();
+}
+document.querySelectorAll('.spec button').forEach(b => b.addEventListener('click', () => setSpec(b.dataset.for)));
+
+/* ---------- contact ---------- */
+const prettyNum = n => '+' + n.slice(0, 2) + ' ' + n.slice(2, 7) + ' ' + n.slice(7);
+$('#waBtn').href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hello, I would like a demo of AK Goods for my clinic.')}`;
+for (const id of ['#telLink', '#footTel']) { $(id).href = 'tel:+' + WHATSAPP; $(id).textContent = prettyNum(WHATSAPP); }
+$('#yr').textContent = new Date().getFullYear();
+const utm = Object.fromEntries([...new URLSearchParams(location.search)].filter(([k]) => /^utm_|^for$/.test(k)));
+$('#enq').addEventListener('submit', async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target)); data.source = JSON.stringify(utm); data.page = location.href;
+  if (FORM_ENDPOINT) {
+    try { await fetch(FORM_ENDPOINT, { method:'POST', mode:'no-cors', body:new URLSearchParams(data) }); }
+    catch (err) { /* falls through to the thank-you message; the WhatsApp button remains available */ }
+  } else {
+    const text = `Demo enquiry\nName: ${data.name}\nPhone: ${data.phone}\nClinic: ${data.clinic}, ${data.city}\nSpecialty: ${data.specialty}\n${data.message || ''}`;
+    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(text)}`, '_blank');
+  }
+  e.target.reset(); $('#okMsg').style.display = 'block';
+});
+setSpec(spec);
+</script>
+</body>
+</html>
